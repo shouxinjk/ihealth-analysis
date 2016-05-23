@@ -24,11 +24,11 @@ CREATE TABLE `ta_user` (
   `inheritDiseases` varchar(1024) DEFAULT '',
   `concernDiseases` varchar(1024) DEFAULT '',  
   `tags` varchar(1024) DEFAULT '',
-  `lastModifiedOn` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `lastPreparedOn` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `lastMatchedOn` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `lastGeneratedOn` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `lastEvaluatedOn` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,  
+  `lastModifiedOn` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00',
+  `lastPreparedOn` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00',
+  `lastMatchedOn` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00',
+  `lastGeneratedOn` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00',
+  `lastEvaluatedOn` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00',  
   PRIMARY KEY (`USER_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -46,8 +46,8 @@ CREATE TABLE `ta_userrule` (
   `riskType` varchar(20) DEFAULT 'low',
   `ruleExpression` varchar(1024) DEFAULT '1=1',
   `status` varchar(20) DEFAULT 'pending',
-  `createdOn` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `modifiedOn` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `createdOn` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00',
+  `modifiedOn` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00',
   `worker` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`rule_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
