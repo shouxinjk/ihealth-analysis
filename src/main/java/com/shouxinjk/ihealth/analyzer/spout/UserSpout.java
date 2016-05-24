@@ -39,11 +39,12 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
     Integer queryTimeoutSecs;
     protected transient JdbcClient jdbcClient;
     protected ConnectionProvider connectionProvider;
-    String sql = "select user_id,user_id as checkuppackage_id from ta_user where ?>?";
+    String sql = "select user_id,user_id as checkuppackage_id from ta_user where ?>? and ?>?";
     public List<Column> columns;
     String timestampFieldA = "lastModifiedOn";
     String timestampFieldB = "lastEvaluatedOn";
-    
+    String timestampFieldC = "lastModifiedOn";
+    String timestampFieldD = "lastPreparedOn";
     public static final List<Values> rows = Lists.newArrayList(
             new Values("0453deafa8114ce9a55f9245a87b709c","0453deafa8114ce9a55f9245a87b709c"),
             new Values("0e589df1ee70439e9af5a11e642dd1c7","0e589df1ee70439e9af5a11e642dd1c7"));
@@ -55,11 +56,13 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
 //        this(true);
     }
     
-    public UserSpout(ConnectionProvider connectionProvider,String timestampField1,String timestampField2) {
+    public UserSpout(ConnectionProvider connectionProvider,String timestampField1,String timestampField2,String timestampField3,String timestampField4) {
         this.isDistributed = true;
         this.connectionProvider = connectionProvider;
         this.timestampFieldA = timestampField1;
         this.timestampFieldB = timestampField2;
+        this.timestampFieldC = timestampField3;
+        this.timestampFieldD = timestampField4;
         this.columns = new ArrayList<Column>();
     }
 
@@ -77,6 +80,8 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
         this.jdbcClient = new JdbcClient(connectionProvider, queryTimeoutSecs);
         columns.add(new Column("timestamp1", timestampFieldA, Types.VARCHAR));
         columns.add(new Column("timestamp2", timestampFieldB, Types.VARCHAR));
+        columns.add(new Column("timestamp3", timestampFieldC, Types.VARCHAR));
+        columns.add(new Column("timestamp4", timestampFieldD, Types.VARCHAR));
     }
 
     public void close(){
@@ -111,9 +116,9 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
                     values.add(column.getVal());
                     userId=column.getVal().toString();
                 }
-                String updateTimestampSql = "update ta_user set "+timestampFieldB+"=now() where user_id='"+userId+"'";
-//                System.err.println(updateTimestampSql);
-                jdbcClient.executeSql(updateTimestampSql); 
+//                String updateTimestampSql = "update ta_user set "+timestampFieldB+"=now() where user_id='"+userId+"'";
+////                System.err.println(updateTimestampSql);
+//                jdbcClient.executeSql(updateTimestampSql); 
                 this.collector.emit(values);
             }
         }

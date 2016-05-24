@@ -61,7 +61,7 @@ public class GuideLineMatchTopology extends AbstractCheckupSolutionTopology {
     	
     	//Stream: get stream data from Queue like Kafka
 //    	UserSpout userSpout = new UserSpout();    	
-    	UserSpout userSpout = new UserSpout(connectionProvider,"lastPreparedOn","lastEvaluatedOn");
+    	UserSpout userSpout = new UserSpout(connectionProvider,"lastPreparedOn","lastEvaluatedOn","lastPreparedOn","lastModifiedOn");
     	    	
         //SQL:select all UserRule
     	//select user_id,rule_id,guideline_id,ruleExpression from ta_userRule where user_id=$user_id;
@@ -95,7 +95,7 @@ public class GuideLineMatchTopology extends AbstractCheckupSolutionTopology {
         List<Column> timestampSchemaColumns = Lists.newArrayList(new Column("user_id", Types.VARCHAR));
         JdbcMapper timestampMapper = new SimpleJdbcMapper(timestampSchemaColumns);//define tuple columns
         JdbcInsertBolt jdbcUpdateUserTimestampBolt = new JdbcInsertBolt(connectionProvider, timestampMapper)
-                .withInsertQuery("update ta_user set lastMatchedOn=now() where user_id=?");
+                .withInsertQuery("update ta_user set lastMatchedOn=now(),status='matched' where user_id=?");
         
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(USER_SPOUT, userSpout, 1);//TODO here we should put candidate user in a queue like Kafka

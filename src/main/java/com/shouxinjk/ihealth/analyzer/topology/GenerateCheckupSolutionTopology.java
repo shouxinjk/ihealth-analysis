@@ -70,7 +70,7 @@ public class GenerateCheckupSolutionTopology extends AbstractCheckupSolutionTopo
     	
     	//Stream: get stream data from Queue like Kafka
 //    	UserSpout userSpout = new UserSpout();
-     	UserSpout userSpout = new UserSpout(connectionProvider,"lastMatchedOn","lastEvaluatedOn");
+     	UserSpout userSpout = new UserSpout(connectionProvider,"lastMatchedOn","lastEvaluatedOn","lastMatchedOn","lastPreparedOn");
     	
         //SQL:select all matched userRule
     	//select rule_id,guideline_id,riskType,user_id from ta_userRule where User_id="$user_id" and status="match"
@@ -136,7 +136,7 @@ public class GenerateCheckupSolutionTopology extends AbstractCheckupSolutionTopo
         List<Column> timestampSchemaColumns = Lists.newArrayList(new Column("user_id", Types.VARCHAR));
         JdbcMapper timestampMapper = new SimpleJdbcMapper(timestampSchemaColumns);//define tuple columns
         JdbcInsertBolt jdbcUpdateUserTimestampBolt = new JdbcInsertBolt(connectionProvider, timestampMapper)
-                .withInsertQuery("update ta_user set lastGeneratedOn=now() where user_id=?");
+                .withInsertQuery("update ta_user set lastGeneratedOn=now(),status='generated' where user_id=?");
                 
         //TOPO:userSpout ==> findNewUserBolt ==> insertCheckupPackageBolt
         TopologyBuilder builder = new TopologyBuilder();

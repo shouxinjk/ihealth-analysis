@@ -69,7 +69,7 @@ public class PrepareUserRuleTopology extends AbstractCheckupSolutionTopology {
     public StormTopology getTopology() {
     	
     	//Stream: get stream data from Queue like Kafka
-    	UserSpout userSpout = new UserSpout(connectionProvider,"lastModifiedOn","lastEvaluatedOn");
+    	UserSpout userSpout = new UserSpout(connectionProvider,"lastModifiedOn","lastEvaluatedOn","lastModifiedOn","lastPreparedOn");
     	
         //SQL:select all users that don't have checkup package
     	String sql = SQL_FIND_GUIDELINE;
@@ -115,7 +115,7 @@ public class PrepareUserRuleTopology extends AbstractCheckupSolutionTopology {
         List<Column> timestampSchemaColumns = Lists.newArrayList(new Column("user_id", Types.VARCHAR));
         JdbcMapper timestampMapper = new SimpleJdbcMapper(timestampSchemaColumns);//define tuple columns
         JdbcInsertBolt jdbcUpdateUserTimestampBolt = new JdbcInsertBolt(connectionProvider, timestampMapper)
-                .withInsertQuery("update ta_user set lastPreparedOn=now() where user_id=?");
+                .withInsertQuery("update ta_user set lastPreparedOn=now(),status='prepared' where user_id=?");
                 
         //TOPO:userSpout ==> findNewUserBolt ==> insertCheckupPackageBolt
         TopologyBuilder builder = new TopologyBuilder();

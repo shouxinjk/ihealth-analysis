@@ -66,7 +66,7 @@ public class ReleaseCheckupPackageTopology extends AbstractCheckupSolutionTopolo
     	
     	//Stream: get stream data from Queue like Kafka
 //    	UserSpout userSpout = new UserSpout();
-     	UserSpout userSpout = new UserSpout(connectionProvider,"lastGeneratedOn","lastEvaluatedOn");
+     	UserSpout userSpout = new UserSpout(connectionProvider,"lastGeneratedOn","lastEvaluatedOn","lastGeneratedOn","lastMatchedOn");
         //SQL:select pending checkup package info
     	//
     	String sql = "select ? as checkupPackage_id,if(count(user_id)>0,'inprocess','ready') as status from ta_userRule where user_id=? and status='match'";
@@ -89,7 +89,7 @@ public class ReleaseCheckupPackageTopology extends AbstractCheckupSolutionTopolo
         List<Column> timestampSchemaColumns = Lists.newArrayList(new Column("user_id", Types.VARCHAR));
         JdbcMapper timestampMapper = new SimpleJdbcMapper(timestampSchemaColumns);//define tuple columns
         JdbcInsertBolt jdbcUpdateUserTimestampBolt = new JdbcInsertBolt(connectionProvider, timestampMapper)
-                .withInsertQuery("update ta_user set lastEvaluatedOn=now() where user_id=?");
+                .withInsertQuery("update ta_user set lastEvaluatedOn=now(),status='released' where user_id=?");
         
         //SQL:update TA_USER last evaluated time
         //update 
