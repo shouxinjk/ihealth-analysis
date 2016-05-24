@@ -17,6 +17,7 @@
  */
 package com.shouxinjk.ihealth.analyzer.spout;
 
+import org.apache.log4j.Logger;
 import org.apache.storm.Config;
 import org.apache.storm.jdbc.common.Column;
 import org.apache.storm.jdbc.common.ConnectionProvider;
@@ -33,25 +34,24 @@ import com.google.common.collect.Lists;
 import java.sql.Types;
 import java.util.*;
 
-public class UserSpout extends BaseRichSpout implements IRichSpout {
+public class MatchedUserRuleSpout extends BaseRichSpout implements IRichSpout {
     boolean isDistributed;
     SpoutOutputCollector collector;
     Integer queryTimeoutSecs;
     protected transient JdbcClient jdbcClient;
     protected ConnectionProvider connectionProvider;
     public List<Column> columns;
-    String timestampFieldA = "lastModifiedOn";
-    String timestampFieldB = "lastEvaluatedOn";
+    String status = "match";
+    Logger logger = Logger.getLogger(MatchedUserRuleSpout.class);
     
-    public UserSpout(ConnectionProvider connectionProvider) {
-        this(connectionProvider,"lastModifiedOn","lastEvaluatedOn");
+    public MatchedUserRuleSpout(ConnectionProvider connectionProvider) {
+        this(connectionProvider,"match");
     }
     
-    public UserSpout(ConnectionProvider connectionProvider,String timestampField1,String timestampField2) {
+    public MatchedUserRuleSpout(ConnectionProvider connectionProvider,String status) {
         this.isDistributed = true;
         this.connectionProvider = connectionProvider;
-        this.timestampFieldA = timestampField1;
-        this.timestampFieldB = timestampField2;
+        this.status = status;
         this.columns = new ArrayList<Column>();
     }
 
@@ -67,34 +67,40 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
         }
         connectionProvider.prepare();
         this.jdbcClient = new JdbcClient(connectionProvider, queryTimeoutSecs);
-        columns.add(new Column("timestamp1", timestampFieldA, Types.VARCHAR));
-        columns.add(new Column("timestamp2", timestampFieldB, Types.VARCHAR));
+        columns.add(new Column("status", status, Types.VARCHAR));
     }
 
     public void close(){
-    	//TODO need to check if other bolts will be impacted
     	connectionProvider.cleanup();
     }
 
     public void nextTuple() {
-//        final Random rand = new Random();
-//        final Values row = rows.get(rand.nextInt(rows.size() - 1));
-//        this.collector.emit(row);
-//      Thread.yield();
-
-    	//select user_id,user_id as checkuppackage_id from ta_user where lastModifiedOn>lastEvaluatedOn
-        String sql = "select user_id,user_id as checkuppackage_id from ta_user where ?>?";
+        String sql="select rule_id,user_id,user_id as checkupitempidrefix,"
+        		+ "guideline_id,originate,description,concernedFactors,"
+        		+ "riskDefine,disease_name,riskType "
+        		+ "from ta_userRule where sysflag='toGenerate' and status=?";
         List<List<Column>> result = jdbcClient.select(sql,columns);
         if (result != null && result.size() != 0) {
             for (List<Column> row : result) {
                 Values values = new Values();
-                String userId=row.get(0).getVal().toString();//get UserId
+                String userId=row.get(1).getVal().toString();//get userId
+                String sysFlag=row.get(1).getVal().toString();//get sysFlag
                 for(Column column : row) {
                     values.add(column.getVal());
                 }
                 //here we update timestamp
                 String updateTimestampSql = "update ta_user set lastEvaluatedOn=now() where user_id='"+userId+"'";
-//                System.err.println(updateTimestampSql);
+                logger.debug("Try to update user status.[SQL]"+updateTimestampSql);
+                jdbcClient.executeSql(updateTimestampSql); 
+                //here we update statistic matchedRules
+                String statisticSql = "insert into ta_statistics (chekuppackage_id,matchedrules) "
+                		+ "values('"+userId+"',1) "
+        				+ "on duplicate key update matchedRules=matchedRules+1";
+                logger.debug("Try to update satistic matched rules.[SQL]"+updateTimestampSql);
+                jdbcClient.executeSql(statisticSql); 
+                //here we update sysflag(toMatch\toGenerate\toRelease)
+                statisticSql = "update ta_userRule set sysflag='toRelease' where user_id='"+userId+"'";
+                logger.debug("Try to update userRule sysflag.[SQL]"+statisticSql);
                 jdbcClient.executeSql(updateTimestampSql); 
                 this.collector.emit(values);
             }
@@ -103,7 +109,7 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
 
 
     public void ack(Object msgId) {
-    	//TODO here we should update ta_user.lastEvaluatedOn
+    	//do nothing
     }
 
     public void fail(Object msgId) {
@@ -111,8 +117,8 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-//        declarer.declare(new Fields("user_id"));
-        declarer.declare(new Fields("user_id","checkuppackage_id"));
+        declarer.declare(new Fields("rule_id","checkupitempidrefix","user_id","guideline_id","originate","description","concernedFactors",
+        		"riskDefine","disease_name","riskType"));
     }
 
     @Override

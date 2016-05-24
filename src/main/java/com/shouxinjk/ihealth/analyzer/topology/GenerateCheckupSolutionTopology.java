@@ -24,6 +24,7 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
 import com.google.common.collect.Lists;
+import com.shouxinjk.ihealth.analyzer.spout.MatchedUserRuleSpout;
 import com.shouxinjk.ihealth.analyzer.spout.UserSpout;
 import com.shouxinjk.ihealth.analyzer.util.Util;
 
@@ -51,14 +52,14 @@ import java.util.List;
  * 
  */
 public class GenerateCheckupSolutionTopology extends AbstractCheckupSolutionTopology {
-    private static final String USER_SPOUT = "USER_SPOUT";
+    private static final String MATCHED_USER_RULE_SPOUT = "MATCHED_USER_RULE_SPOUT";
     private static final String SQL_FIND_MATCHED_USERRULE_BOLT = "SQL_FIND_MATCHED_USERRULE_BOLT";
     private static final String SQL_FIND_MATCHED_SOLUTION_BOLT = "SQL_FIND_MATCHED_SOLUTION_BOLT";
+    private static final String SQL_UPDATE_STATISTIC_DATA_BOLT = "SQL_UPDATE_STATISTIC_DATA_BOLT";
     private static final String SQL_INSERT_CHECKUP_ITEM_BOLT = "SQL_INSERT_CHECKUP_ITEM_BOLT";
     private static final String SQL_UPDATE_USERRULE_STATUS_BOLT = "SQL_UPDATE_USERRULE_STATUS_BOLT";
     private static final String SQL_UPDATE_LAST_GENERATED_TIME = "SQL_UPDATE_LAST_GENERATED_TIME";
     
-    private static final String SQL_FIND_MATCHED_USERRULE="select rule_id,user_id,user_id as checkupitempidrefix,guideline_id,originate,description,concernedFactors,riskDefine,disease_name,riskType from ta_userRule where user_id=? and status='match'";
     private static final String SQL_FIND_MATCHED_SOLUTION="select a.examsolution_id,concat(?,'-',a.examsolution_id) as checkupitem_id,a.subgroup,a.riskType,a.startage,a.endage,a.features,a.examguideline_id as guideline_id,? as user_id,? as originate,? as description,? as concernedFactors,? as riskDefine,? as disease_name,? as rule_id,b.name as frequency,c.name as examitem from exam_examsolution a left join exam_examfrequency b on b.examfrequency_id=a.examfrequency_id left join exam_examitem c on c.examitem_id=a.examitem_id where examguideline_id=? and riskType=?";
         
     public static void main(String[] args) throws Exception {
@@ -68,19 +69,17 @@ public class GenerateCheckupSolutionTopology extends AbstractCheckupSolutionTopo
     @Override
     public StormTopology getTopology() {
     	
-    	//Stream: get stream data from Queue like Kafka
-//    	UserSpout userSpout = new UserSpout();
-     	UserSpout userSpout = new UserSpout(connectionProvider,"lastMatchedOn","lastEvaluatedOn","lastMatchedOn","lastPreparedOn");
+     	MatchedUserRuleSpout matchedUserRuleSpout = new MatchedUserRuleSpout(connectionProvider);
     	
         //SQL:select all matched userRule
     	//select rule_id,guideline_id,riskType,user_id from ta_userRule where User_id="$user_id" and status="match"
-    	String sql = prop.getProperty("mysql.query.matched.userRule", SQL_FIND_MATCHED_USERRULE);
-        Fields outputFields = new Fields("rule_id","checkupitempidrefix","user_id","guideline_id","originate","description","concernedFactors",
-        		"riskDefine","disease_name","riskType");//Here we query all userRule columns
-        List<Column> queryParamColumns = Lists.newArrayList(new Column("user_id", Types.VARCHAR));
-        JdbcLookupMapper jdbcLookupMapper = new SimpleJdbcLookupMapper(outputFields, queryParamColumns);
-        JdbcLookupBolt jdbcFindMatchedUserRuleBolt = new JdbcLookupBolt(connectionProvider, sql, jdbcLookupMapper);
-        
+//    	String sql = prop.getProperty("mysql.query.matched.userRule", SQL_FIND_MATCHED_USERRULE);
+//        Fields outputFields = new Fields("rule_id","checkupitempidrefix","user_id","guideline_id","originate","description","concernedFactors",
+//        		"riskDefine","disease_name","riskType");//Here we query all userRule columns
+//        List<Column> queryParamColumns = Lists.newArrayList(new Column("user_id", Types.VARCHAR));
+//        JdbcLookupMapper jdbcLookupMapper = new SimpleJdbcLookupMapper(outputFields, queryParamColumns);
+//        JdbcLookupBolt jdbcFindMatchedUserRuleBolt = new JdbcLookupBolt(connectionProvider, sql, jdbcLookupMapper);
+//        
         //SQL:find matched exam solutions
         //select “$user_id"as user_id,“$rule_id" as rule_id,if(count(*)>0,“match",“dismatch") as status from ta_user where user_id=$user_id and $ruleExpression
     	String sqlFindMatchedExamSolution = prop.getProperty("mysql.query.matched.solution", SQL_FIND_MATCHED_SOLUTION);
@@ -137,15 +136,23 @@ public class GenerateCheckupSolutionTopology extends AbstractCheckupSolutionTopo
         JdbcMapper timestampMapper = new SimpleJdbcMapper(timestampSchemaColumns);//define tuple columns
         JdbcInsertBolt jdbcUpdateUserTimestampBolt = new JdbcInsertBolt(connectionProvider, timestampMapper)
                 .withInsertQuery("update ta_user set lastGeneratedOn=now(),status='generated' where user_id=?");
-                
+        
+        //update statistic data
+        List<Column> statisticSchemaColumns = Lists.newArrayList(new Column("user_id", Types.VARCHAR));
+        JdbcMapper statisticMapper = new SimpleJdbcMapper(statisticSchemaColumns);//define tuple columns
+        JdbcInsertBolt jdbcUpdateStatisticDataBolt = new JdbcInsertBolt(connectionProvider, statisticMapper)
+                .withInsertQuery("insert into ta_statistics (chekuppackage_id,generatedRules) values(?,1) "
+                		+ "on duplicate key update generatedRules=generatedRules+1");
+        
         //TOPO:userSpout ==> findNewUserBolt ==> insertCheckupPackageBolt
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout(USER_SPOUT, userSpout, 1);//TODO here we should put candidate user in a queue like Kafka
-        builder.setBolt(SQL_FIND_MATCHED_USERRULE_BOLT, jdbcFindMatchedUserRuleBolt, 1).shuffleGrouping(USER_SPOUT);
+        builder.setSpout(MATCHED_USER_RULE_SPOUT, matchedUserRuleSpout, 1);
+//        builder.setBolt(SQL_FIND_MATCHED_USERRULE_BOLT, jdbcFindMatchedUserRuleBolt, 1).shuffleGrouping(MATCHED_USER_RULE_SPOUT);
         builder.setBolt(SQL_FIND_MATCHED_SOLUTION_BOLT, jdbcFindExamSolutionsBolt, 1).shuffleGrouping(SQL_FIND_MATCHED_USERRULE_BOLT);
-        builder.setBolt(SQL_UPDATE_LAST_GENERATED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
-        builder.setBolt(SQL_INSERT_CHECKUP_ITEM_BOLT, jdbcInsertCheckupItemBolt, 1).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
-        builder.setBolt(SQL_UPDATE_USERRULE_STATUS_BOLT, updateUserRuleStatusBolt,1).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
+        builder.setBolt(SQL_UPDATE_LAST_GENERATED_TIME, jdbcUpdateUserTimestampBolt, 5).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
+        builder.setBolt(SQL_UPDATE_STATISTIC_DATA_BOLT, jdbcUpdateStatisticDataBolt, 5).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
+        builder.setBolt(SQL_INSERT_CHECKUP_ITEM_BOLT, jdbcInsertCheckupItemBolt, 5).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
+        builder.setBolt(SQL_UPDATE_USERRULE_STATUS_BOLT, updateUserRuleStatusBolt,5).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
         return builder.createTopology();
     }
 }

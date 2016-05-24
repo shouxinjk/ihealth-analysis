@@ -24,7 +24,7 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
 import com.google.common.collect.Lists;
-import com.shouxinjk.ihealth.analyzer.spout.UserSpout;
+import com.shouxinjk.ihealth.analyzer.spout.UserRuleSpout;
 import com.shouxinjk.ihealth.analyzer.util.Util;
 
 import org.apache.storm.jdbc.bolt.JdbcInsertBolt;
@@ -44,13 +44,12 @@ import java.util.List;
 
 
 public class GuideLineMatchTopology extends AbstractCheckupSolutionTopology {
-    private static final String USER_SPOUT = "USER_SPOUT";
+    private static final String USER_RULE_SPOUT = "USER_RULE_SPOUT";
     private static final String SQL_FIND_USER_RULE_BOLT = "SQL_FIND_USER_RULE_BOLT";
     private static final String SQL_MATCH_USER_RULE_BOLT = "SQL_MATCH_USER_RULE_BOLT";
     private static final String SQL_UPDATE_USER_RULE_BOLT = "SQL_UPDATE_USER_RULE_BOLT";
     private static final String SQL_UPDATE_LAST_MATCHED_TIME = "SQL_UPDATE_LAST_MATCHED_TIME";
     
-    private static final String SQL_FIND_USER_RULE="select user_id,rule_id,user_id as user_id2,ruleExpression from ta_userRule where user_id=?";
     private static final String SQL_MATCH_USER_RULE="select ? as user_id,? as rule_id,if(count(*)>0,'match','dismatch') as status from ta_user where user_id=? and ?";
     public static void main(String[] args) throws Exception {
         new GuideLineMatchTopology().execute(args);
@@ -58,18 +57,16 @@ public class GuideLineMatchTopology extends AbstractCheckupSolutionTopology {
 
     @Override
     public StormTopology getTopology() {
-    	
-    	//Stream: get stream data from Queue like Kafka
-//    	UserSpout userSpout = new UserSpout();    	
-    	UserSpout userSpout = new UserSpout(connectionProvider,"lastPreparedOn","lastEvaluatedOn","lastPreparedOn","lastModifiedOn");
+    	  	
+    	UserRuleSpout userRuleSpout = new UserRuleSpout(connectionProvider);
     	    	
         //SQL:select all UserRule
     	//select user_id,rule_id,guideline_id,ruleExpression from ta_userRule where user_id=$user_id;
-    	String sqlFindUserRule = prop.getProperty("mysql.query.userRule", SQL_FIND_USER_RULE);
-        Fields userRuleOutputFields = new Fields("user_id","rule_id","user_id2","ruleExpression");//Here we query all pending user rules
-        List<Column> queryUserRuleParams = Lists.newArrayList(new Column("user_id", Types.VARCHAR));
-        JdbcLookupMapper jdbcUserRuleLookupMapper = new SimpleJdbcLookupMapper(userRuleOutputFields, queryUserRuleParams);
-        JdbcLookupBolt jdbcFindUserRuleBolt = new JdbcLookupBolt(connectionProvider, sqlFindUserRule, jdbcUserRuleLookupMapper);
+//    	String sqlFindUserRule = prop.getProperty("mysql.query.userRule", SQL_FIND_USER_RULE);
+//        Fields userRuleOutputFields = new Fields("user_id","rule_id","user_id2","ruleExpression");//Here we query all pending user rules
+//        List<Column> queryUserRuleParams = Lists.newArrayList(new Column("user_id", Types.VARCHAR));
+//        JdbcLookupMapper jdbcUserRuleLookupMapper = new SimpleJdbcLookupMapper(userRuleOutputFields, queryUserRuleParams);
+//        JdbcLookupBolt jdbcFindUserRuleBolt = new JdbcLookupBolt(connectionProvider, sqlFindUserRule, jdbcUserRuleLookupMapper);
 
         //SQL:check if user-rule match
         //select “$user_id"as user_id,“$rule_id" as rule_id,if(count(*)>0,“match",“dismatch") as status from ta_user where user_id=$user_id and $ruleExpression
@@ -89,7 +86,7 @@ public class GuideLineMatchTopology extends AbstractCheckupSolutionTopology {
         		new Column("rule_id", Types.VARCHAR));//used for query values from tuple
         JdbcMapper mapper = new SimpleJdbcMapper(schemaColumns);//define tuple columns
         JdbcInsertBolt jdbcUpdateMatchResultBolt = new JdbcInsertBolt(connectionProvider, mapper)
-                .withInsertQuery("update ta_userRule set status=? where user_id=? and rule_id=?");
+                .withInsertQuery("update ta_userRule set sysflag='toGenerate',status=? where user_id=? and rule_id=?");
         
         //SQL: update lastPreparedOn timestamp
         List<Column> timestampSchemaColumns = Lists.newArrayList(new Column("user_id", Types.VARCHAR));
@@ -98,11 +95,11 @@ public class GuideLineMatchTopology extends AbstractCheckupSolutionTopology {
                 .withInsertQuery("update ta_user set lastMatchedOn=now(),status='matched' where user_id=?");
         
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout(USER_SPOUT, userSpout, 1);//TODO here we should put candidate user in a queue like Kafka
-        builder.setBolt(SQL_FIND_USER_RULE_BOLT, jdbcFindUserRuleBolt, 1).shuffleGrouping(USER_SPOUT);
-        builder.setBolt(SQL_MATCH_USER_RULE_BOLT, jdbcMatchUserRuleBolt, 1).shuffleGrouping(SQL_FIND_USER_RULE_BOLT);
-        builder.setBolt(SQL_UPDATE_LAST_MATCHED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(SQL_MATCH_USER_RULE_BOLT);
-        builder.setBolt(SQL_UPDATE_USER_RULE_BOLT, jdbcUpdateMatchResultBolt, 1).shuffleGrouping(SQL_MATCH_USER_RULE_BOLT);
+        builder.setSpout(USER_RULE_SPOUT, userRuleSpout, 1);//TODO here we should put candidate user in a queue like Kafka
+//        builder.setBolt(SQL_FIND_USER_RULE_BOLT, jdbcFindUserRuleBolt, 1).shuffleGrouping(USER_RULE_SPOUT);
+        builder.setBolt(SQL_MATCH_USER_RULE_BOLT, jdbcMatchUserRuleBolt, 5).shuffleGrouping(USER_RULE_SPOUT);
+        builder.setBolt(SQL_UPDATE_LAST_MATCHED_TIME, jdbcUpdateUserTimestampBolt, 5).shuffleGrouping(SQL_MATCH_USER_RULE_BOLT);
+        builder.setBolt(SQL_UPDATE_USER_RULE_BOLT, jdbcUpdateMatchResultBolt, 5).shuffleGrouping(SQL_MATCH_USER_RULE_BOLT);
         return builder.createTopology();
     }
 }

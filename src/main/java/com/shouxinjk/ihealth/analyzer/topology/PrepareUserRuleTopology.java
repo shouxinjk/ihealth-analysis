@@ -69,7 +69,7 @@ public class PrepareUserRuleTopology extends AbstractCheckupSolutionTopology {
     public StormTopology getTopology() {
     	
     	//Stream: get stream data from Queue like Kafka
-    	UserSpout userSpout = new UserSpout(connectionProvider,"lastModifiedOn","lastEvaluatedOn","lastModifiedOn","lastPreparedOn");
+    	UserSpout userSpout = new UserSpout(connectionProvider,"lastModifiedOn","lastEvaluatedOn");
     	
         //SQL:select all users that don't have checkup package
     	String sql = SQL_FIND_GUIDELINE;
@@ -93,8 +93,11 @@ public class PrepareUserRuleTopology extends AbstractCheckupSolutionTopology {
         		new Column("highriskexpression", Types.VARCHAR));//used for query values from tuple
         JdbcMapper highRiskUserRuleMapper = new SimpleJdbcMapper(highRiskSchemaColumns);//define tuple columns
         JdbcInsertBolt jdbcInsertHighRiskUserRuleBolt = new JdbcInsertBolt(connectionProvider, highRiskUserRuleMapper)
-                .withInsertQuery("insert into ta_userRule(rule_id,user_id,guideline_id,disease_name,originate,description,concernedfactors,riskDefine,ruleExpression,riskType,status,createdOn,modifiedOn) "
-                		+ "values (?,?,?,?,?,?,?,?,?,'high','pending',now(),now()) on duplicate key update status='pending',modifiedOn=now()");
+                .withInsertQuery("insert into ta_userRule(rule_id,user_id,guideline_id,disease_name,originate,"
+                		+ "description,concernedfactors,riskDefine,ruleExpression,riskType,"
+                		+ "status,sysflag,createdOn,modifiedOn) "
+                		+ "values (?,?,?,?,?,?,?,?,?,'high','pending','toMatch',now(),now()) "
+                		+ "on duplicate key update status='pending',sysflag='toMatch',modifiedOn=now()");
                 
         //SQL:insert pending guide rules
         List<Column> lowRiskSchemaColumns = Lists.newArrayList(new Column("lowrisk_ruleid", Types.VARCHAR),
@@ -122,8 +125,8 @@ public class PrepareUserRuleTopology extends AbstractCheckupSolutionTopology {
         builder.setSpout(USER_SPOUT, userSpout, 1);//TODO here we should put candidate user in a queue like Kafka
         builder.setBolt(SQL_FIND_ALL_GUIDELINE_BOLT, jdbcFindNewUserBolt, 1).shuffleGrouping(USER_SPOUT);
         builder.setBolt(SQL_UPDATE_LAST_PREPARED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(SQL_FIND_ALL_GUIDELINE_BOLT);
-        builder.setBolt(SQL_INSERT_HIGHRISK_USER_RULE_BOLT, jdbcInsertHighRiskUserRuleBolt, 1).shuffleGrouping(SQL_FIND_ALL_GUIDELINE_BOLT);
-        builder.setBolt(SQL_INSERT_LOWRISK_USER_RULE_BOLT, jdbcInsertLowRiskUserRuleBolt, 1).shuffleGrouping(SQL_FIND_ALL_GUIDELINE_BOLT);
+        builder.setBolt(SQL_INSERT_HIGHRISK_USER_RULE_BOLT, jdbcInsertHighRiskUserRuleBolt, 3).shuffleGrouping(SQL_FIND_ALL_GUIDELINE_BOLT);
+        builder.setBolt(SQL_INSERT_LOWRISK_USER_RULE_BOLT, jdbcInsertLowRiskUserRuleBolt, 3).shuffleGrouping(SQL_FIND_ALL_GUIDELINE_BOLT);
         return builder.createTopology();
     }
 }

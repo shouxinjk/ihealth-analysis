@@ -51,3 +51,11 @@ CREATE TABLE `ta_userrule` (
   `worker` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`rule_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TABLE IF EXISTS `ta_statistics`;
+CREATE TABLE `ta_statistics` (
+  `checkuppackage_id` varchar(100) NOT NULL,
+  `matchedRules` int(11) NOT NULL default 1,
+  `generatedRules` int(11) NOT NULL default 1,
+  PRIMARY KEY (`checkuppackage_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

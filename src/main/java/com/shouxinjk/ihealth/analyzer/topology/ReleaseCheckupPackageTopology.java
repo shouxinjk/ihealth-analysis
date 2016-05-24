@@ -24,6 +24,7 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
 import com.google.common.collect.Lists;
+import com.shouxinjk.ihealth.analyzer.spout.ReadySolutionSpout;
 import com.shouxinjk.ihealth.analyzer.spout.UserSpout;
 import com.shouxinjk.ihealth.analyzer.util.Util;
 
@@ -51,7 +52,7 @@ import java.util.List;
  * 
  */
 public class ReleaseCheckupPackageTopology extends AbstractCheckupSolutionTopology {
-    private static final String USER_SPOUT = "USER_SPOUT";
+    private static final String READY_SOLUTION_SPOUT = "READY_SOLUTION_SPOUT";
     private static final String SQL_FIND_READY_CHECKUP_PACKAGE = "SQL_FIND_READY_CHECKUP_PACKAGE";
     private static final String SQL_UPDATE_CHECKUP_PACKAGE_STATUS = "SQL_UPDATE_CHECKUP_PACKAGE_STATUS";
     private static final String SQL_UPDATE_LAST_EVALUATED_TIME = "SQL_UPDATE_LAST_EVALUATED_TIME";
@@ -64,17 +65,15 @@ public class ReleaseCheckupPackageTopology extends AbstractCheckupSolutionTopolo
     @Override
     public StormTopology getTopology() {
     	
-    	//Stream: get stream data from Queue like Kafka
-//    	UserSpout userSpout = new UserSpout();
-     	UserSpout userSpout = new UserSpout(connectionProvider,"lastGeneratedOn","lastEvaluatedOn","lastGeneratedOn","lastMatchedOn");
+    	ReadySolutionSpout readySolutionSpout = new ReadySolutionSpout(connectionProvider);
         //SQL:select pending checkup package info
     	//
-    	String sql = "select ? as checkupPackage_id,if(count(user_id)>0,'inprocess','ready') as status from ta_userRule where user_id=? and status='match'";
-        Fields outputFields = new Fields("user_id","checkupPackage_id","status");//Here we query statistic status against specified USER_ID
-        List<Column> queryParamColumns = Lists.newArrayList(new Column("checkuppackage_id", Types.VARCHAR),new Column("user_id", Types.VARCHAR));
-        JdbcLookupMapper jdbcLookupMapper = new SimpleJdbcLookupMapper(outputFields, queryParamColumns);
-        JdbcLookupBolt jdbcFindReadyCheckupPackageBolt = new JdbcLookupBolt(connectionProvider, sql, jdbcLookupMapper);
-      
+//    	String sql = "select ? as checkupPackage_id,if(count(user_id)>0,'inprocess','ready') as status from ta_userRule where user_id=? and status='match'";
+//        Fields outputFields = new Fields("user_id","checkupPackage_id","status");//Here we query statistic status against specified USER_ID
+//        List<Column> queryParamColumns = Lists.newArrayList(new Column("checkuppackage_id", Types.VARCHAR),new Column("user_id", Types.VARCHAR));
+//        JdbcLookupMapper jdbcLookupMapper = new SimpleJdbcLookupMapper(outputFields, queryParamColumns);
+//        JdbcLookupBolt jdbcFindReadyCheckupPackageBolt = new JdbcLookupBolt(connectionProvider, sql, jdbcLookupMapper);
+//      
 
         //SQL:update checkup package status
         //
@@ -98,14 +97,13 @@ public class ReleaseCheckupPackageTopology extends AbstractCheckupSolutionTopolo
         JdbcInsertBolt updateCheckupItemPackageIDBolt = new JdbcInsertBolt(connectionProvider, checkupItemMapper)
                 .withInsertQuery("update tb_checkupitem set checkuppackage_id=user_id,sysflag='done' where user_id=?");
                                
-                
         //TOPO:userSpout ==> findNewUserBolt ==> insertCheckupPackageBolt
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout(USER_SPOUT, userSpout, 1);//TODO here we should put candidate user in a queue like Kafka
-        builder.setBolt(SQL_FIND_READY_CHECKUP_PACKAGE, jdbcFindReadyCheckupPackageBolt, 1).shuffleGrouping(USER_SPOUT);
-        builder.setBolt(SQL_UPDATE_LAST_EVALUATED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(SQL_FIND_READY_CHECKUP_PACKAGE);
+        builder.setSpout(READY_SOLUTION_SPOUT, readySolutionSpout, 1);
+//        builder.setBolt(SQL_FIND_READY_CHECKUP_PACKAGE, jdbcFindReadyCheckupPackageBolt, 1).shuffleGrouping(USER_SPOUT);
+        builder.setBolt(SQL_UPDATE_LAST_EVALUATED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(READY_SOLUTION_SPOUT);
         builder.setBolt(SQL_UPDATE_CHECKUP_PACKAGE_STATUS, jdbcUpdateCheckupPackageStatusBolt, 1).shuffleGrouping(SQL_FIND_READY_CHECKUP_PACKAGE);
-        builder.setBolt(SQL_UPDATE_CHECKITEM_PACKAGE_ID, updateCheckupItemPackageIDBolt,1).shuffleGrouping(USER_SPOUT);
+        builder.setBolt(SQL_UPDATE_CHECKITEM_PACKAGE_ID, updateCheckupItemPackageIDBolt,1).shuffleGrouping(READY_SOLUTION_SPOUT);
         return builder.createTopology();
     }
 }

@@ -64,7 +64,7 @@ public class CheckupSolutionGenerateTopology extends AbstractCheckupSolutionTopo
     public StormTopology getTopology() {
     	
     	//Stream: get stream data from Queue like Kafka
-    	UserSpout userSpout = new UserSpout();
+    	UserSpout userSpout = new UserSpout(null);
     	
         //SQL:select all users that don't have checkup package
     	String sql = prop.getProperty("mysql.query.newuser", SQL_FIND_NEW_USER);
