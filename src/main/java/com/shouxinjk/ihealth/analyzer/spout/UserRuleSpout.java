@@ -42,7 +42,7 @@ public class UserRuleSpout extends BaseRichSpout implements IRichSpout {
     protected ConnectionProvider connectionProvider;
     public List<Column> columns;
     String status = "pending";
-    Logger logger = Logger.getLogger(UserRuleSpout.class);
+    private static final Logger logger = Logger.getLogger(UserRuleSpout.class);
     
     public UserRuleSpout(ConnectionProvider connectionProvider) {
         this(connectionProvider,"pending");

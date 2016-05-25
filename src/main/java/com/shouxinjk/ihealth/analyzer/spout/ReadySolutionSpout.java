@@ -41,7 +41,7 @@ public class ReadySolutionSpout extends BaseRichSpout implements IRichSpout {
     protected transient JdbcClient jdbcClient;
     protected ConnectionProvider connectionProvider;
     public List<Column> columns;
-    Logger logger = Logger.getLogger(ReadySolutionSpout.class);
+    private static final Logger logger = Logger.getLogger(ReadySolutionSpout.class);
     
     public ReadySolutionSpout(ConnectionProvider connectionProvider) {
         this(connectionProvider,true);
@@ -73,13 +73,14 @@ public class ReadySolutionSpout extends BaseRichSpout implements IRichSpout {
     }
 
     public void nextTuple() {
-        String sql="select checkuppackage_id,if(matchedRules>generatedRules,'inprocess','ready') as status from ta_statistics where 1=?";
+        String sql="select checkupPackage_id as user_id,checkupPackage_id,if(matchedRules>generatedRules,'inprocess','ready') as status from ta_statistics where status='inprocess' and 1=?";
         List<List<Column>> result = jdbcClient.select(sql,columns);
         if (result != null && result.size() != 0) {
             for (List<Column> row : result) {
                 Values values = new Values();
-                String userId=row.get(1).getVal().toString();//get userId
-                String sysFlag=row.get(1).getVal().toString();//get sysFlag
+                String userId=row.get(0).getVal().toString();//get userId
+                String checkupPakcageId=row.get(1).getVal().toString();//get checkup package id
+                String status=row.get(2).getVal().toString();//get status
                 for(Column column : row) {
                     values.add(column.getVal());
                 }
@@ -87,6 +88,10 @@ public class ReadySolutionSpout extends BaseRichSpout implements IRichSpout {
                 String updateTimestampSql = "update ta_user set lastEvaluatedOn=now() where user_id='"+userId+"'";
                 logger.debug("Try to update user status.[SQL]"+updateTimestampSql);
                 jdbcClient.executeSql(updateTimestampSql); 
+                //here we update statistic matchedRules
+                String statisticSql = "update ta_statistics set status='"+status+"' where checkuppackage_id='"+checkupPakcageId+"'";
+                logger.debug("Try to update satistic status.[SQL]"+statisticSql);
+                jdbcClient.executeSql(statisticSql); 
                 this.collector.emit(values);
             }
         }
@@ -102,8 +107,7 @@ public class ReadySolutionSpout extends BaseRichSpout implements IRichSpout {
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("rule_id","checkupitempidrefix","user_id","guideline_id","originate","description","concernedFactors",
-        		"riskDefine","disease_name","riskType"));
+        declarer.declare(new Fields("user_id","checkupPackage_id","status"));
     }
 
     @Override

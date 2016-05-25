@@ -141,16 +141,17 @@ public class GenerateCheckupSolutionTopology extends AbstractCheckupSolutionTopo
         List<Column> statisticSchemaColumns = Lists.newArrayList(new Column("user_id", Types.VARCHAR));
         JdbcMapper statisticMapper = new SimpleJdbcMapper(statisticSchemaColumns);//define tuple columns
         JdbcInsertBolt jdbcUpdateStatisticDataBolt = new JdbcInsertBolt(connectionProvider, statisticMapper)
-                .withInsertQuery("insert into ta_statistics (chekuppackage_id,generatedRules) values(?,1) "
+                .withInsertQuery("insert into ta_statistics (checkuppackage_id,generatedRules) values(?,1) "
                 		+ "on duplicate key update generatedRules=generatedRules+1");
         
         //TOPO:userSpout ==> findNewUserBolt ==> insertCheckupPackageBolt
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(MATCHED_USER_RULE_SPOUT, matchedUserRuleSpout, 1);
+      //TODO here we should improve.here we change totalGenerateRules number
+        builder.setBolt(SQL_UPDATE_STATISTIC_DATA_BOLT, jdbcUpdateStatisticDataBolt, 1).shuffleGrouping(MATCHED_USER_RULE_SPOUT);//NOTICE:only 1
 //        builder.setBolt(SQL_FIND_MATCHED_USERRULE_BOLT, jdbcFindMatchedUserRuleBolt, 1).shuffleGrouping(MATCHED_USER_RULE_SPOUT);
-        builder.setBolt(SQL_FIND_MATCHED_SOLUTION_BOLT, jdbcFindExamSolutionsBolt, 1).shuffleGrouping(SQL_FIND_MATCHED_USERRULE_BOLT);
-        builder.setBolt(SQL_UPDATE_LAST_GENERATED_TIME, jdbcUpdateUserTimestampBolt, 5).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
-        builder.setBolt(SQL_UPDATE_STATISTIC_DATA_BOLT, jdbcUpdateStatisticDataBolt, 5).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
+        builder.setBolt(SQL_FIND_MATCHED_SOLUTION_BOLT, jdbcFindExamSolutionsBolt, 1).shuffleGrouping(MATCHED_USER_RULE_SPOUT);
+        builder.setBolt(SQL_UPDATE_LAST_GENERATED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
         builder.setBolt(SQL_INSERT_CHECKUP_ITEM_BOLT, jdbcInsertCheckupItemBolt, 5).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
         builder.setBolt(SQL_UPDATE_USERRULE_STATUS_BOLT, updateUserRuleStatusBolt,5).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
         return builder.createTopology();

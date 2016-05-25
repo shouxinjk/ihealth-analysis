@@ -42,7 +42,7 @@ public class MatchedUserRuleSpout extends BaseRichSpout implements IRichSpout {
     protected ConnectionProvider connectionProvider;
     public List<Column> columns;
     String status = "match";
-    Logger logger = Logger.getLogger(MatchedUserRuleSpout.class);
+    private static final Logger logger = Logger.getLogger(MatchedUserRuleSpout.class);
     
     public MatchedUserRuleSpout(ConnectionProvider connectionProvider) {
         this(connectionProvider,"match");
@@ -83,6 +83,7 @@ public class MatchedUserRuleSpout extends BaseRichSpout implements IRichSpout {
         if (result != null && result.size() != 0) {
             for (List<Column> row : result) {
                 Values values = new Values();
+                String ruleId=row.get(0).getVal().toString();//get ruleId
                 String userId=row.get(1).getVal().toString();//get userId
                 String sysFlag=row.get(1).getVal().toString();//get sysFlag
                 for(Column column : row) {
@@ -93,15 +94,15 @@ public class MatchedUserRuleSpout extends BaseRichSpout implements IRichSpout {
                 logger.debug("Try to update user status.[SQL]"+updateTimestampSql);
                 jdbcClient.executeSql(updateTimestampSql); 
                 //here we update statistic matchedRules
-                String statisticSql = "insert into ta_statistics (chekuppackage_id,matchedrules) "
+                String statisticSql = "insert into ta_statistics (checkuppackage_id,matchedrules) "
                 		+ "values('"+userId+"',1) "
         				+ "on duplicate key update matchedRules=matchedRules+1";
-                logger.debug("Try to update satistic matched rules.[SQL]"+updateTimestampSql);
+                logger.debug("Try to update satistic matched rules.[SQL]"+statisticSql);
                 jdbcClient.executeSql(statisticSql); 
                 //here we update sysflag(toMatch\toGenerate\toRelease)
-                statisticSql = "update ta_userRule set sysflag='toRelease' where user_id='"+userId+"'";
+                statisticSql = "update ta_userRule set sysflag='toRelease' where rule_id='"+ruleId+"'";
                 logger.debug("Try to update userRule sysflag.[SQL]"+statisticSql);
-                jdbcClient.executeSql(updateTimestampSql); 
+                jdbcClient.executeSql(statisticSql); 
                 this.collector.emit(values);
             }
         }

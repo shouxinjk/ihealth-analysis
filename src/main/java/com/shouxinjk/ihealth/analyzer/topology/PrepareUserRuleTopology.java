@@ -59,7 +59,7 @@ public class PrepareUserRuleTopology extends AbstractCheckupSolutionTopology {
     
     //TODO here must append guideline status
     private static final String SQL_FIND_GUIDELINE_DEBUG="SELECT concat('high-',a.examguideline_id) as highrisk_ruleid,concat('low-',a.examguideline_id) as lowrisk_ruleid,? as user_id,a.examguideline_id,a.originate,a.concernedfactors,a.description,a.highriskdefine,a.highriskexpression,a.lowriskdefine,a.lowriskexpression,b.NAME as disease_name from exam_examguideline a left join admin_disease b on a.DISEASE_ID=b.DISEASE_ID";
-    private static final String SQL_FIND_GUIDELINE="SELECT concat('high-',a.examguideline_id) as highrisk_ruleid,concat('low-',a.examguideline_id) as lowrisk_ruleid,? as user_id,a.examguideline_id,a.originate,a.concernedfactors,a.description,a.highriskdefine,a.highriskexpression,a.lowriskdefine,a.lowriskexpression,b.NAME as disease_name from exam_examguideline a left join admin_disease b on a.DISEASE_ID=b.DISEASE_ID where a.status='5'";
+    private static final String SQL_FIND_GUIDELINE="SELECT concat('high-',a.examguideline_id) as highrisk_ruleid,concat('low-',a.examguideline_id) as lowrisk_ruleid,? as user_id,a.examguideline_id,a.originate,a.concernedfactors,a.description,a.highriskdefine,a.highriskexpression,a.lowriskdefine,a.lowriskexpression,b.NAME as disease_name from exam_examguideline a left join admin_disease b on a.DISEASE_ID=b.DISEASE_ID where a.status='已发布'";
         
     public static void main(String[] args) throws Exception {
         new PrepareUserRuleTopology().execute(args);
@@ -68,8 +68,7 @@ public class PrepareUserRuleTopology extends AbstractCheckupSolutionTopology {
     @Override
     public StormTopology getTopology() {
     	
-    	//Stream: get stream data from Queue like Kafka
-    	UserSpout userSpout = new UserSpout(connectionProvider,"lastModifiedOn","lastEvaluatedOn");
+    	UserSpout userSpout = new UserSpout(connectionProvider);
     	
         //SQL:select all users that don't have checkup package
     	String sql = SQL_FIND_GUIDELINE;
@@ -111,8 +110,11 @@ public class PrepareUserRuleTopology extends AbstractCheckupSolutionTopology {
         		new Column("highriskexpression", Types.VARCHAR));//used for query values from tuple
         JdbcMapper lowRiskUserRuleMapper = new SimpleJdbcMapper(lowRiskSchemaColumns);//define tuple columns
         JdbcInsertBolt jdbcInsertLowRiskUserRuleBolt = new JdbcInsertBolt(connectionProvider, lowRiskUserRuleMapper)
-                .withInsertQuery("insert into ta_userRule(rule_id,user_id,guideline_id,disease_name,originate,description,concernedfactors,riskDefine,ruleExpression,riskType,status,createdOn,modifiedOn) "
-                		+ "values (?,?,?,?,?,?,?,?,?,'low','pending',now(),now()) on duplicate key update status='pending'");
+                .withInsertQuery("insert into ta_userRule(rule_id,user_id,guideline_id,disease_name,originate,"
+                		+ "description,concernedfactors,riskDefine,ruleExpression,riskType,"
+                		+ "status,sysflag,createdOn,modifiedOn) "
+                		+ "values (?,?,?,?,?,?,?,?,?,'low','pending','toMatch',now(),now()) "
+                		+ "on duplicate key update status='pending',sysflag='toMatch',modifiedOn=now()");
                 
         //SQL: update lastPreparedOn timestamp
         List<Column> timestampSchemaColumns = Lists.newArrayList(new Column("user_id", Types.VARCHAR));

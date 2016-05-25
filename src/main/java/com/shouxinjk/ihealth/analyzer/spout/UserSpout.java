@@ -17,6 +17,7 @@
  */
 package com.shouxinjk.ihealth.analyzer.spout;
 
+import org.apache.log4j.Logger;
 import org.apache.storm.Config;
 import org.apache.storm.jdbc.common.Column;
 import org.apache.storm.jdbc.common.ConnectionProvider;
@@ -40,8 +41,9 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
     protected transient JdbcClient jdbcClient;
     protected ConnectionProvider connectionProvider;
     public List<Column> columns;
-    String timestampFieldA = "lastModifiedOn";
-    String timestampFieldB = "lastEvaluatedOn";
+//    String timestampFieldA = "lastModifiedOn";
+//    String timestampFieldB = "lastEvaluatedOn";
+    private static final Logger logger = Logger.getLogger(UserSpout.class);
     
     public UserSpout(ConnectionProvider connectionProvider) {
         this(connectionProvider,"lastModifiedOn","lastEvaluatedOn");
@@ -50,8 +52,8 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
     public UserSpout(ConnectionProvider connectionProvider,String timestampField1,String timestampField2) {
         this.isDistributed = true;
         this.connectionProvider = connectionProvider;
-        this.timestampFieldA = timestampField1;
-        this.timestampFieldB = timestampField2;
+//        this.timestampFieldA = timestampField1;
+//        this.timestampFieldB = timestampField2;
         this.columns = new ArrayList<Column>();
     }
 
@@ -67,8 +69,7 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
         }
         connectionProvider.prepare();
         this.jdbcClient = new JdbcClient(connectionProvider, queryTimeoutSecs);
-        columns.add(new Column("timestamp1", timestampFieldA, Types.VARCHAR));
-        columns.add(new Column("timestamp2", timestampFieldB, Types.VARCHAR));
+        columns.add(new Column("timestamp1", 1, Types.INTEGER));
     }
 
     public void close(){
@@ -83,7 +84,8 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
 //      Thread.yield();
 
     	//select user_id,user_id as checkuppackage_id from ta_user where lastModifiedOn>lastEvaluatedOn
-        String sql = "select user_id,user_id as checkuppackage_id from ta_user where ?>?";
+        String sql = "select user_id,user_id as checkuppackage_id from ta_user where lastModifiedOn>lastEvaluatedOn and ?";
+        System.err.println("try to query candidate users.[SQL]"+sql);
         List<List<Column>> result = jdbcClient.select(sql,columns);
         if (result != null && result.size() != 0) {
             for (List<Column> row : result) {
@@ -94,7 +96,7 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
                 }
                 //here we update timestamp
                 String updateTimestampSql = "update ta_user set lastEvaluatedOn=now() where user_id='"+userId+"'";
-//                System.err.println(updateTimestampSql);
+                System.err.println("try to update user timestamp.[SQL]"+updateTimestampSql);
                 jdbcClient.executeSql(updateTimestampSql); 
                 this.collector.emit(values);
             }
