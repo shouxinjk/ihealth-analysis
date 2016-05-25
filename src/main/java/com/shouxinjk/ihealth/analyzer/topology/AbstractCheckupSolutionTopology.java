@@ -85,7 +85,7 @@ public abstract class AbstractCheckupSolutionTopology {
         //submit topology
         String topoName = prop.getProperty("common.topology.name", "ihealthAnalyzeTopology");
         if (args != null && args.length > 0) {
-        	config.setNumWorkers(3); 
+        	config.setNumWorkers(1); 
             StormSubmitter.submitTopology(args[0], config, getTopology());
         } else {
         	//TODO to set TOPOLOGY_ACKERS to 0 to disable ack

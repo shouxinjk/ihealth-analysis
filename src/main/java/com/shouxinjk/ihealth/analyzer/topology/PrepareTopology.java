@@ -50,7 +50,7 @@ import java.util.List;
  * @author qchzhu
  * 
  */
-public class PrepareUserRuleTopology extends AbstractCheckupSolutionTopology {
+public class PrepareTopology extends AbstractCheckupSolutionTopology {
     private static final String USER_SPOUT = "USER_SPOUT";
     private static final String SQL_FIND_ALL_GUIDELINE_BOLT = "SQL_FIND_ALL_GUIDELINE_BOLT";
     private static final String SQL_INSERT_HIGHRISK_USER_RULE_BOLT = "SQL_INSERT_HIGHRISK_USER_RULE_BOLT";
@@ -62,7 +62,7 @@ public class PrepareUserRuleTopology extends AbstractCheckupSolutionTopology {
     private static final String SQL_FIND_GUIDELINE="SELECT concat('high-',a.examguideline_id) as highrisk_ruleid,concat('low-',a.examguideline_id) as lowrisk_ruleid,? as user_id,a.examguideline_id,a.originate,a.concernedfactors,a.description,a.highriskdefine,a.highriskexpression,a.lowriskdefine,a.lowriskexpression,b.NAME as disease_name from exam_examguideline a left join admin_disease b on a.DISEASE_ID=b.DISEASE_ID where a.status='已发布'";
         
     public static void main(String[] args) throws Exception {
-        new PrepareUserRuleTopology().execute(args);
+        new PrepareTopology().execute(args);
     }
 
     @Override

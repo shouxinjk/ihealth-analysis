@@ -51,7 +51,7 @@ import java.util.List;
  * @author qchzhu
  * 
  */
-public class ReleaseCheckupPackageTopology extends AbstractCheckupSolutionTopology {
+public class ReleaseTopology extends AbstractCheckupSolutionTopology {
     private static final String READY_SOLUTION_SPOUT = "READY_SOLUTION_SPOUT";
     private static final String SQL_FIND_READY_CHECKUP_PACKAGE = "SQL_FIND_READY_CHECKUP_PACKAGE";
     private static final String SQL_UPDATE_CHECKUP_PACKAGE_STATUS = "SQL_UPDATE_CHECKUP_PACKAGE_STATUS";
@@ -59,7 +59,7 @@ public class ReleaseCheckupPackageTopology extends AbstractCheckupSolutionTopolo
     private static final String SQL_UPDATE_CHECKITEM_PACKAGE_ID = "SQL_UPDATE_CHECKITEM_PACKAGE_ID";
             
     public static void main(String[] args) throws Exception {
-        new ReleaseCheckupPackageTopology().execute(args);
+        new ReleaseTopology().execute(args);
     }
 
     @Override

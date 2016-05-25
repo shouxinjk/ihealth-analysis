@@ -43,7 +43,7 @@ import java.sql.Types;
 import java.util.List;
 
 
-public class GuideLineMatchTopology extends AbstractCheckupSolutionTopology {
+public class MatchTopology extends AbstractCheckupSolutionTopology {
     private static final String USER_RULE_SPOUT = "USER_RULE_SPOUT";
     private static final String SQL_FIND_USER_RULE_BOLT = "SQL_FIND_USER_RULE_BOLT";
     private static final String SQL_MATCH_USER_RULE_BOLT = "SQL_MATCH_USER_RULE_BOLT";
@@ -52,7 +52,7 @@ public class GuideLineMatchTopology extends AbstractCheckupSolutionTopology {
     
     private static final String SQL_MATCH_USER_RULE="select ? as user_id,? as rule_id,if(count(*)>0,'match','dismatch') as status from ta_user where user_id=? and ?";
     public static void main(String[] args) throws Exception {
-        new GuideLineMatchTopology().execute(args);
+        new MatchTopology().execute(args);
     }
 
     @Override
@@ -98,8 +98,8 @@ public class GuideLineMatchTopology extends AbstractCheckupSolutionTopology {
         builder.setSpout(USER_RULE_SPOUT, userRuleSpout, 1);//TODO here we should put candidate user in a queue like Kafka
 //        builder.setBolt(SQL_FIND_USER_RULE_BOLT, jdbcFindUserRuleBolt, 1).shuffleGrouping(USER_RULE_SPOUT);
         builder.setBolt(SQL_MATCH_USER_RULE_BOLT, jdbcMatchUserRuleBolt, 5).shuffleGrouping(USER_RULE_SPOUT);
-        builder.setBolt(SQL_UPDATE_LAST_MATCHED_TIME, jdbcUpdateUserTimestampBolt, 5).shuffleGrouping(SQL_MATCH_USER_RULE_BOLT);
-        builder.setBolt(SQL_UPDATE_USER_RULE_BOLT, jdbcUpdateMatchResultBolt, 5).shuffleGrouping(SQL_MATCH_USER_RULE_BOLT);
+        builder.setBolt(SQL_UPDATE_LAST_MATCHED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(SQL_MATCH_USER_RULE_BOLT);
+        builder.setBolt(SQL_UPDATE_USER_RULE_BOLT, jdbcUpdateMatchResultBolt, 1).shuffleGrouping(SQL_MATCH_USER_RULE_BOLT);
         return builder.createTopology();
     }
 }

@@ -51,7 +51,7 @@ import java.util.List;
  * @author qchzhu
  * 
  */
-public class GenerateCheckupSolutionTopology extends AbstractCheckupSolutionTopology {
+public class GenerateTopology extends AbstractCheckupSolutionTopology {
     private static final String MATCHED_USER_RULE_SPOUT = "MATCHED_USER_RULE_SPOUT";
     private static final String SQL_FIND_MATCHED_USERRULE_BOLT = "SQL_FIND_MATCHED_USERRULE_BOLT";
     private static final String SQL_FIND_MATCHED_SOLUTION_BOLT = "SQL_FIND_MATCHED_SOLUTION_BOLT";
@@ -63,7 +63,7 @@ public class GenerateCheckupSolutionTopology extends AbstractCheckupSolutionTopo
     private static final String SQL_FIND_MATCHED_SOLUTION="select a.examsolution_id,concat(?,'-',a.examsolution_id) as checkupitem_id,a.subgroup,a.riskType,a.startage,a.endage,a.features,a.examguideline_id as guideline_id,? as user_id,? as originate,? as description,? as concernedFactors,? as riskDefine,? as disease_name,? as rule_id,b.name as frequency,c.name as examitem from exam_examsolution a left join exam_examfrequency b on b.examfrequency_id=a.examfrequency_id left join exam_examitem c on c.examitem_id=a.examitem_id where examguideline_id=? and riskType=?";
         
     public static void main(String[] args) throws Exception {
-        new GenerateCheckupSolutionTopology().execute(args);
+        new GenerateTopology().execute(args);
     }
 
     @Override
@@ -152,8 +152,8 @@ public class GenerateCheckupSolutionTopology extends AbstractCheckupSolutionTopo
 //        builder.setBolt(SQL_FIND_MATCHED_USERRULE_BOLT, jdbcFindMatchedUserRuleBolt, 1).shuffleGrouping(MATCHED_USER_RULE_SPOUT);
         builder.setBolt(SQL_FIND_MATCHED_SOLUTION_BOLT, jdbcFindExamSolutionsBolt, 1).shuffleGrouping(MATCHED_USER_RULE_SPOUT);
         builder.setBolt(SQL_UPDATE_LAST_GENERATED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
-        builder.setBolt(SQL_INSERT_CHECKUP_ITEM_BOLT, jdbcInsertCheckupItemBolt, 5).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
-        builder.setBolt(SQL_UPDATE_USERRULE_STATUS_BOLT, updateUserRuleStatusBolt,5).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
+        builder.setBolt(SQL_INSERT_CHECKUP_ITEM_BOLT, jdbcInsertCheckupItemBolt, 3).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
+        builder.setBolt(SQL_UPDATE_USERRULE_STATUS_BOLT, updateUserRuleStatusBolt,3).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
         return builder.createTopology();
     }
 }
