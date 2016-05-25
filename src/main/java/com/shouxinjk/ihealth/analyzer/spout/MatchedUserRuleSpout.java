@@ -106,6 +106,7 @@ public class MatchedUserRuleSpout extends BaseRichSpout implements IRichSpout {
                 this.collector.emit(values);
             }
         }
+        Thread.yield();
     }
 
 

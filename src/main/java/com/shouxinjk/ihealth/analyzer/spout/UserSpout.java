@@ -78,11 +78,6 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
     }
 
     public void nextTuple() {
-//        final Random rand = new Random();
-//        final Values row = rows.get(rand.nextInt(rows.size() - 1));
-//        this.collector.emit(row);
-//      Thread.yield();
-
     	//select user_id,user_id as checkuppackage_id from ta_user where lastModifiedOn>lastEvaluatedOn
         String sql = "select user_id,user_id as checkuppackage_id from ta_user where lastModifiedOn>lastEvaluatedOn and ?";
         System.err.println("try to query candidate users.[SQL]"+sql);
@@ -101,6 +96,7 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
                 this.collector.emit(values);
             }
         }
+        Thread.yield();
     }
 
 

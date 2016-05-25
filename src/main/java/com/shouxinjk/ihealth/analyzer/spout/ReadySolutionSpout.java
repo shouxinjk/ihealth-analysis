@@ -95,6 +95,7 @@ public class ReadySolutionSpout extends BaseRichSpout implements IRichSpout {
                 this.collector.emit(values);
             }
         }
+        Thread.yield();
     }
 
 
