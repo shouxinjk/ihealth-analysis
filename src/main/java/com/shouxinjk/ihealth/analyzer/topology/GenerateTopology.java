@@ -121,7 +121,7 @@ public class GenerateTopology extends AbstractCheckupSolutionTopology {
         JdbcInsertBolt jdbcInsertCheckupItemBolt = new JdbcInsertBolt(connectionProvider, checkupItemMapper)
                 .withInsertQuery("insert into tb_checkupitem(checkupitem_id,subgroup,name,features,frequency,status,originate,description,generatedtime,"
                 		+ "worker,revision,sysflag,checkuppackage_id,user_id,concernedFactors,disease_name,riskType,solution_id,riskDefine,startage,endage) "
-                		+ "values (?,?,?,?,?,'ready',?,?,now(),'robot','1','pending',user_id,?,?,?,?,?,?,?,?) on duplicate key update revision=revision+1");
+                		+ "values (?,?,?,?,?,'ready',?,?,now(),'robot','1','pending',user_id,?,?,?,?,?,?,?,?) on duplicate key update revision=revision+1,sysflag='pending'");
                 
         //SQL:update UserRule status
         //update ta_userRule set status=“done” where user_id=“$user_id” and rule_id=“$rule_id”
