@@ -85,6 +85,7 @@ public class PendingCheckupItemSpout extends BaseRichSpout implements IRichSpout
                     values.add(column.getVal());
                 }
 //                //here we update timestamp
+                //do not do this!!!
 //                String updateTimestampSql = "update ta_user set lastEvaluatedOn=now() where user_id='"+userId+"'";
 //                logger.debug("Try to update user status.[SQL]"+updateTimestampSql);
 //                jdbcClient.executeSql(updateTimestampSql); 

@@ -55,7 +55,7 @@ public class ReleaseTopology extends AbstractCheckupSolutionTopology {
     private static final String READY_SOLUTION_SPOUT = "READY_SOLUTION_SPOUT";
     private static final String SQL_FIND_READY_CHECKUP_PACKAGE = "SQL_FIND_READY_CHECKUP_PACKAGE";
     private static final String SQL_UPDATE_CHECKUP_PACKAGE_STATUS = "SQL_UPDATE_CHECKUP_PACKAGE_STATUS";
-    private static final String SQL_UPDATE_LAST_EVALUATED_TIME = "SQL_UPDATE_LAST_EVALUATED_TIME";
+    private static final String SQL_UPDATE_LAST_RELEASED_TIME = "SQL_UPDATE_LAST_RELEASED_TIME";
     private static final String SQL_UPDATE_CHECKITEM_PACKAGE_ID = "SQL_UPDATE_CHECKITEM_PACKAGE_ID";
             
     public static void main(String[] args) throws Exception {
@@ -84,11 +84,11 @@ public class ReleaseTopology extends AbstractCheckupSolutionTopology {
         JdbcInsertBolt jdbcUpdateCheckupPackageStatusBolt = new JdbcInsertBolt(connectionProvider, checkupPackageMapper)
                 .withInsertQuery("update tb_checkuppackage set status=?,generatedtime=now() where checkuppackage_id=?");
                 
-        //SQL: update lastGeneratedOn timestamp
+        //SQL: update lastReleasedOn timestamp
         List<Column> timestampSchemaColumns = Lists.newArrayList(new Column("user_id", Types.VARCHAR));
         JdbcMapper timestampMapper = new SimpleJdbcMapper(timestampSchemaColumns);//define tuple columns
         JdbcInsertBolt jdbcUpdateUserTimestampBolt = new JdbcInsertBolt(connectionProvider, timestampMapper)
-                .withInsertQuery("update ta_user set lastEvaluatedOn=now(),status='released' where user_id=?");
+                .withInsertQuery("update ta_user set lastReleasedOn=now(),status='released' where user_id=?");
         
         //SQL:update TA_USER last evaluated time
         //update 
@@ -101,7 +101,7 @@ public class ReleaseTopology extends AbstractCheckupSolutionTopology {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(READY_SOLUTION_SPOUT, readySolutionSpout, 1);
 //        builder.setBolt(SQL_FIND_READY_CHECKUP_PACKAGE, jdbcFindReadyCheckupPackageBolt, 1).shuffleGrouping(USER_SPOUT);
-        builder.setBolt(SQL_UPDATE_LAST_EVALUATED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(READY_SOLUTION_SPOUT);
+        builder.setBolt(SQL_UPDATE_LAST_RELEASED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(READY_SOLUTION_SPOUT);
         builder.setBolt(SQL_UPDATE_CHECKUP_PACKAGE_STATUS, jdbcUpdateCheckupPackageStatusBolt, 1).shuffleGrouping(READY_SOLUTION_SPOUT);
         builder.setBolt(SQL_UPDATE_CHECKITEM_PACKAGE_ID, updateCheckupItemPackageIDBolt,1).shuffleGrouping(READY_SOLUTION_SPOUT);
         return builder.createTopology();

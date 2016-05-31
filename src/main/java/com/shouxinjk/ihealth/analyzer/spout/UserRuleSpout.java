@@ -85,12 +85,13 @@ public class UserRuleSpout extends BaseRichSpout implements IRichSpout {
                     values.add(column.getVal());
                 }
                 //here we update timestamp
-                String updateTimestampSql = "update ta_user set lastEvaluatedOn=now() where user_id='"+userId+"'";
-                logger.debug("Try to update user status.[SQL]"+updateTimestampSql);
-                jdbcClient.executeSql(updateTimestampSql); 
+                //NOTICE: here we cannot update lastEvaluatedOn!!!
+//                String updateTimestampSql = "update ta_user set lastEvaluatedOn=now() where user_id='"+userId+"'";
+//                logger.debug("Try to update user status.[SQL]"+updateTimestampSql);
+//                jdbcClient.executeSql(updateTimestampSql); 
                 //here we update sysflag(toMatch\toGenerate\toRelease)
                 String statisticSql = "update ta_userRule set sysflag='toGenerate' where user_id='"+userId+"'";
-                logger.debug("Try to update userRule sysflag.[SQL]"+updateTimestampSql);
+                logger.debug("Try to update userRule sysflag.[SQL]"+statisticSql);
                 jdbcClient.executeSql(statisticSql); 
                 this.collector.emit(values);
             }

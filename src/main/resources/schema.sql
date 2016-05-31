@@ -28,6 +28,7 @@ CREATE TABLE `ta_user` (
   `lastPreparedOn` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00',
   `lastMatchedOn` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00',
   `lastGeneratedOn` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00',
+  `lastReleasedOn` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00',
   `lastEvaluatedOn` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00',  
   PRIMARY KEY (`USER_ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
