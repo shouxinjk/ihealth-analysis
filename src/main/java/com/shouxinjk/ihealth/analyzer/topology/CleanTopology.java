@@ -68,7 +68,7 @@ public class CleanTopology extends AbstractCheckupSolutionTopology {
  
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(PENDING_CHECKUP_ITEM_SPOUT, pendingCheckupItemSpout, 1);//here we load all pending checkup items
-        builder.setBolt(SQL_DELETE_UNMATCH_CHECKUP_ITEM, jdbcCleanCheckupItemBolt, 5).shuffleGrouping(PENDING_CHECKUP_ITEM_SPOUT);
+        builder.setBolt(SQL_DELETE_UNMATCH_CHECKUP_ITEM, jdbcCleanCheckupItemBolt, 1).shuffleGrouping(PENDING_CHECKUP_ITEM_SPOUT);
         return builder.createTopology();
     }
 }
