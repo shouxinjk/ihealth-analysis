@@ -89,11 +89,6 @@ public class MatchedUserRuleSpout extends BaseRichSpout implements IRichSpout {
                 for(Column column : row) {
                     values.add(column.getVal());
                 }
-                //here we update timestamp
-                //do not do this !!!
-//                String updateTimestampSql = "update ta_user set lastEvaluatedOn=now() where user_id='"+userId+"'";
-//                logger.debug("Try to update user status.[SQL]"+updateTimestampSql);
-//                jdbcClient.executeSql(updateTimestampSql); 
                 //here we update statistic matchedRules
                 String statisticSql = "insert into ta_statistics (checkuppackage_id,matchedrules) "
                 		+ "values('"+userId+"',1) "
@@ -120,7 +115,7 @@ public class MatchedUserRuleSpout extends BaseRichSpout implements IRichSpout {
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("rule_id","checkupitempidrefix","user_id",
+        declarer.declare(new Fields("rule_id","user_id","checkupitempidrefix",
         		"guideline_id","originate",
         		"description","concernedFactors",
         		"riskDefine","disease_name","riskType"));

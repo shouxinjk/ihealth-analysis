@@ -79,13 +79,13 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
 
     public void nextTuple() {
     	//select user_id,user_id as checkuppackage_id from ta_user where lastModifiedOn>lastEvaluatedOn
-        String sql = "select user_id,user_id as checkuppackage_id from ta_user where lastModifiedOn>lastEvaluatedOn and ?";
-        System.err.println("try to query candidate users.[SQL]"+sql);
+        String sql = "select user_id as ruleidprefix1,user_id as ruleidprefix2,user_id,user_id as checkuppackage_id from ta_user where lastModifiedOn>lastEvaluatedOn and ?";
+        logger.debug("try to query candidate users.[SQL]"+sql);
         List<List<Column>> result = jdbcClient.select(sql,columns);
         if (result != null && result.size() != 0) {
             for (List<Column> row : result) {
                 Values values = new Values();
-                String userId=row.get(0).getVal().toString();//get UserId
+                String userId=row.get(2).getVal().toString();//get UserId
                 for(Column column : row) {
                     values.add(column.getVal());
                 }
@@ -106,7 +106,7 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
         		jdbcClient.executeSql(sql);
                 //here we update timestamp
                 String updateTimestampSql = "update ta_user set lastEvaluatedOn=now() where user_id='"+userId+"'";
-                System.err.println("try to update user timestamp.[SQL]"+updateTimestampSql);
+                logger.debug("try to update user timestamp.[SQL]"+updateTimestampSql);
                 jdbcClient.executeSql(updateTimestampSql); 
                 this.collector.emit(values);
             }
@@ -125,7 +125,7 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
 //        declarer.declare(new Fields("user_id"));
-        declarer.declare(new Fields("user_id","checkuppackage_id"));
+        declarer.declare(new Fields("ruleidprefix1","ruleidprefix2","user_id","checkuppackage_id"));
     }
 
     @Override

@@ -58,8 +58,8 @@ public class PrepareTopology extends AbstractCheckupSolutionTopology {
     private static final String SQL_UPDATE_LAST_PREPARED_TIME = "SQL_UPDATE_LAST_PREPARED_TIME";
     
     //TODO here must append guideline status
-    private static final String SQL_FIND_GUIDELINE_DEBUG="SELECT concat('high-',a.examguideline_id) as highrisk_ruleid,concat('low-',a.examguideline_id) as lowrisk_ruleid,? as user_id,a.examguideline_id,a.originate,a.concernedfactors,a.description,a.highriskdefine,a.highriskexpression,a.lowriskdefine,a.lowriskexpression,b.NAME as disease_name from exam_examguideline a left join admin_disease b on a.DISEASE_ID=b.DISEASE_ID";
-    private static final String SQL_FIND_GUIDELINE="SELECT concat('high-',a.examguideline_id) as highrisk_ruleid,concat('low-',a.examguideline_id) as lowrisk_ruleid,? as user_id,a.examguideline_id,a.originate,a.concernedfactors,a.description,a.highriskdefine,a.highriskexpression,a.lowriskdefine,a.lowriskexpression,b.NAME as disease_name from exam_examguideline a left join admin_disease b on a.DISEASE_ID=b.DISEASE_ID where a.status='已发布'";
+    private static final String SQL_FIND_GUIDELINE_DEBUG="SELECT concat(?,'-high-',a.examguideline_id) as highrisk_ruleid,concat(?,'-low-',a.examguideline_id) as lowrisk_ruleid,? as user_id,a.examguideline_id,a.originate,a.concernedfactors,a.description,a.highriskdefine,a.highriskexpression,a.lowriskdefine,a.lowriskexpression,b.NAME as disease_name from exam_examguideline a left join admin_disease b on a.DISEASE_ID=b.DISEASE_ID";
+    private static final String SQL_FIND_GUIDELINE="SELECT concat(?,'-high-',a.examguideline_id) as highrisk_ruleid,concat(?,'-low-',a.examguideline_id) as lowrisk_ruleid,? as user_id,a.examguideline_id,a.originate,a.concernedfactors,a.description,a.highriskdefine,a.highriskexpression,a.lowriskdefine,a.lowriskexpression,b.NAME as disease_name from exam_examguideline a left join admin_disease b on a.DISEASE_ID=b.DISEASE_ID where a.status='已发布'";
         
     public static void main(String[] args) throws Exception {
         new PrepareTopology().execute(args);
@@ -76,7 +76,9 @@ public class PrepareTopology extends AbstractCheckupSolutionTopology {
             sql = SQL_FIND_GUIDELINE_DEBUG;
         Fields outputFields = new Fields("highrisk_ruleid","lowrisk_ruleid","user_id","examguideline_id","originate","concernedfactors","description",
         		"highriskdefine","highriskexpression","lowriskdefine","lowriskexpression","disease_name");//Here we query all guidelines
-        List<Column> queryParamColumns = Lists.newArrayList(new Column("user_id", Types.VARCHAR));
+        List<Column> queryParamColumns = Lists.newArrayList(new Column("ruleidprefix1", Types.VARCHAR),
+        		new Column("ruleidprefix2", Types.VARCHAR),
+        		new Column("user_id", Types.VARCHAR));
         JdbcLookupMapper jdbcLookupMapper = new SimpleJdbcLookupMapper(outputFields, queryParamColumns);
         JdbcLookupBolt jdbcFindNewUserBolt = new JdbcLookupBolt(connectionProvider, sql, jdbcLookupMapper);
 
