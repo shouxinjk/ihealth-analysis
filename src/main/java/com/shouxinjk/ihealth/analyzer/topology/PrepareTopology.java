@@ -129,8 +129,8 @@ public class PrepareTopology extends AbstractCheckupSolutionTopology {
         builder.setSpout(USER_SPOUT, userSpout, 1);//TODO here we should put candidate user in a queue like Kafka
         builder.setBolt(SQL_FIND_ALL_GUIDELINE_BOLT, jdbcFindNewUserBolt, 1).shuffleGrouping(USER_SPOUT);
         builder.setBolt(SQL_UPDATE_LAST_PREPARED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(SQL_FIND_ALL_GUIDELINE_BOLT);
-        builder.setBolt(SQL_INSERT_HIGHRISK_USER_RULE_BOLT, jdbcInsertHighRiskUserRuleBolt, 1).shuffleGrouping(SQL_FIND_ALL_GUIDELINE_BOLT);
-        builder.setBolt(SQL_INSERT_LOWRISK_USER_RULE_BOLT, jdbcInsertLowRiskUserRuleBolt, 1).shuffleGrouping(SQL_FIND_ALL_GUIDELINE_BOLT);
+        builder.setBolt(SQL_INSERT_HIGHRISK_USER_RULE_BOLT, jdbcInsertHighRiskUserRuleBolt, 3).shuffleGrouping(SQL_FIND_ALL_GUIDELINE_BOLT);
+        builder.setBolt(SQL_INSERT_LOWRISK_USER_RULE_BOLT, jdbcInsertLowRiskUserRuleBolt, 3).shuffleGrouping(SQL_FIND_ALL_GUIDELINE_BOLT);
         return builder.createTopology();
     }
 }

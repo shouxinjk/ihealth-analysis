@@ -102,7 +102,7 @@ public class ReleaseTopology extends AbstractCheckupSolutionTopology {
         builder.setSpout(READY_SOLUTION_SPOUT, readySolutionSpout, 1);
 //        builder.setBolt(SQL_FIND_READY_CHECKUP_PACKAGE, jdbcFindReadyCheckupPackageBolt, 1).shuffleGrouping(USER_SPOUT);
         builder.setBolt(SQL_UPDATE_LAST_RELEASED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(READY_SOLUTION_SPOUT);
-        builder.setBolt(SQL_UPDATE_CHECKUP_PACKAGE_STATUS, jdbcUpdateCheckupPackageStatusBolt, 1).shuffleGrouping(READY_SOLUTION_SPOUT);
+        builder.setBolt(SQL_UPDATE_CHECKUP_PACKAGE_STATUS, jdbcUpdateCheckupPackageStatusBolt, 3).shuffleGrouping(READY_SOLUTION_SPOUT);
         builder.setBolt(SQL_UPDATE_CHECKITEM_PACKAGE_ID, updateCheckupItemPackageIDBolt,1).shuffleGrouping(READY_SOLUTION_SPOUT);
         return builder.createTopology();
     }
