@@ -73,7 +73,7 @@ public class ReadySolutionSpout extends BaseRichSpout implements IRichSpout {
     }
 
     public void nextTuple() {
-        String sql="select checkupPackage_id as user_id,checkupPackage_id,if(matchedRules>generatedRules,'inprocess','ready') as status from ta_statistics where status='inprocess' and 1=?";
+        String sql="select checkupPackage_id as user_id,checkupPackage_id,if(matchedRules>generatedRules,'inprocess','ready') as status from ta_statistics where 1=?";//status='inprocess' and 1=?";
         List<List<Column>> result = jdbcClient.select(sql,columns);
         if (result != null && result.size() != 0) {
             for (List<Column> row : result) {

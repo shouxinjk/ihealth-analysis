@@ -95,10 +95,14 @@ public class UserSpout extends BaseRichSpout implements IRichSpout {
         		sb.append(userId);
         		sb.append("','pending','");
         		sb.append(userId);
-        		sb.append("','interface',now()) ");
+        		sb.append("','robot',now()) ");
         		sb.append("on duplicate key update status='pending'");
         		sql = sb.toString();
         		logger.debug("Try to insert/update checkup package.[SQL]"+sql);
+        		jdbcClient.executeSql(sql);
+        		//delete obsoleted checkup items
+        		sql = "delete from tb_checkupitem where user_id='"+userId+"'";
+        		logger.debug("Try to delete obsolete checkup items.[SQL]"+sql);
         		jdbcClient.executeSql(sql);
                 //here we update timestamp
                 String updateTimestampSql = "update ta_user set lastEvaluatedOn=now() where user_id='"+userId+"'";

@@ -47,8 +47,7 @@ import java.util.List;
 public class CleanTopology extends AbstractCheckupSolutionTopology {
     private static final String PENDING_CHECKUP_ITEM_SPOUT = "PENDING_CHECKUP_ITEM_SPOUT";
     private static final String SQL_DELETE_UNMATCH_CHECKUP_ITEM = "SQL_DELETE_UNMATCH_CHECKUP_ITEM";
-    
-    private static final String SQL_MATCH_USER_RULE="select ? as user_id,? as rule_id,if(count(*)>0,'match','dismatch') as status from ta_user where user_id=? and ?";
+
     public static void main(String[] args) throws Exception {
         new CleanTopology().execute(args);
     }
@@ -65,7 +64,7 @@ public class CleanTopology extends AbstractCheckupSolutionTopology {
         		new Column("age2", Types.INTEGER));//used for query values from tuple
         JdbcMapper mapper = new SimpleJdbcMapper(schemaColumns);//define tuple columns
         JdbcInsertBolt jdbcCleanCheckupItemBolt = new JdbcInsertBolt(connectionProvider, mapper)
-                .withInsertQuery("delete from tb_checkupitem where status!='已选中' and sysflag='pending' and checkupitem_id=? and (startage>? or endage<?)");
+                .withInsertQuery("delete from tb_checkupitem where status!='已选中' and checkupitem_id=? and (startage>? or endage<?)");
  
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(PENDING_CHECKUP_ITEM_SPOUT, pendingCheckupItemSpout, 1);//here we load all pending checkup items

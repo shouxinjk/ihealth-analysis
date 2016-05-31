@@ -75,7 +75,7 @@ public class PendingCheckupItemSpout extends BaseRichSpout implements IRichSpout
     }
 
     public void nextTuple() {
-    	String sql="select a.checkupitem_id,b.age,b.age as age2 from tb_checkupitem a left join ta_user b on a.user_id=b.USER_ID where a.status!=? and a.sysflag='pending'";
+    	String sql="select a.checkupitem_id,b.age,b.age as age2 from tb_checkupitem a left join ta_user b on a.user_id=b.USER_ID where a.status!=?";// and a.sysflag='pending'";
         List<List<Column>> result = jdbcClient.select(sql,columns);
         if (result != null && result.size() != 0) {
             for (List<Column> row : result) {

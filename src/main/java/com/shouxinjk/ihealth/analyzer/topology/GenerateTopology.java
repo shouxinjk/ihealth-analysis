@@ -151,7 +151,7 @@ public class GenerateTopology extends AbstractCheckupSolutionTopology {
         builder.setBolt(SQL_UPDATE_STATISTIC_DATA_BOLT, jdbcUpdateStatisticDataBolt, 1).shuffleGrouping(MATCHED_USER_RULE_SPOUT);//NOTICE:only 1
 //        builder.setBolt(SQL_FIND_MATCHED_USERRULE_BOLT, jdbcFindMatchedUserRuleBolt, 1).shuffleGrouping(MATCHED_USER_RULE_SPOUT);
         builder.setBolt(SQL_FIND_MATCHED_SOLUTION_BOLT, jdbcFindExamSolutionsBolt, 1).shuffleGrouping(MATCHED_USER_RULE_SPOUT);
-        builder.setBolt(SQL_UPDATE_LAST_GENERATED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
+        builder.setBolt(SQL_UPDATE_LAST_GENERATED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(MATCHED_USER_RULE_SPOUT);
         builder.setBolt(SQL_INSERT_CHECKUP_ITEM_BOLT, jdbcInsertCheckupItemBolt, 3).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
         builder.setBolt(SQL_UPDATE_USERRULE_STATUS_BOLT, updateUserRuleStatusBolt,3).shuffleGrouping(SQL_FIND_MATCHED_SOLUTION_BOLT);
         return builder.createTopology();
