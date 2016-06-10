@@ -60,7 +60,12 @@ public class GenerateTopology extends AbstractCheckupSolutionTopology {
     private static final String SQL_UPDATE_USERRULE_STATUS_BOLT = "SQL_UPDATE_USERRULE_STATUS_BOLT";
     private static final String SQL_UPDATE_LAST_GENERATED_TIME = "SQL_UPDATE_LAST_GENERATED_TIME";
     
-    private static final String SQL_FIND_MATCHED_SOLUTION="select a.examsolution_id,concat(?,'-',a.examsolution_id) as checkupitem_id,a.subgroup,a.riskType,a.startage,a.endage,a.features,a.examguideline_id as guideline_id,? as user_id,? as originate,? as description,? as concernedFactors,? as riskDefine,? as disease_name,? as rule_id,b.name as frequency,c.name as examitem from exam_examsolution a left join exam_examfrequency b on b.examfrequency_id=a.examfrequency_id left join exam_examitem c on c.examitem_id=a.examitem_id where examguideline_id=? and riskType=?";
+    private static final String SQL_FIND_MATCHED_SOLUTION="select a.examsolution_id,md5(concat(?,'-',IFNULL(a.examsolution_id,''))) as checkupitem_id,"
+    		+ "md5(concat(?,IFNULL(a.examsolution_id,''),IFNULL(a.subgroup,''))) as subgroup,a.riskType,a.startage,a.endage,a.features,"
+    		+ "a.examguideline_id as guideline_id,? as user_id,? as originate,"
+    		+ "? as description,? as concernedFactors,? as riskDefine,? as disease_name,? as rule_id,b.name as frequency,c.name as examitem "
+    		+ "from exam_examsolution a left join exam_examfrequency b on b.examfrequency_id=a.examfrequency_id "
+    		+ "left join exam_examitem c on c.examitem_id=a.examitem_id where examguideline_id=? and riskType=?";
         
     public static void main(String[] args) throws Exception {
         new GenerateTopology().execute(args);
@@ -86,6 +91,7 @@ public class GenerateTopology extends AbstractCheckupSolutionTopology {
         Fields matchedExamSolutionOutputFields = new Fields("examsolution_id","checkupitem_id","subgroup","riskType","startage","endage","features","user_id","guideline_id","originate","description","concernedFactors","riskDefine","disease_name","rule_id","frequency","examitem");//Here we get match results
         List<Column> matchedExamSolutionParams = Lists.newArrayList(
         		new Column("checkupitempidrefix", Types.VARCHAR),
+        		new Column("subgroupprefix", Types.VARCHAR),
         		new Column("user_id", Types.VARCHAR),
         		new Column("originate", Types.VARCHAR),
         		new Column("description", Types.VARCHAR),

@@ -75,7 +75,7 @@ public class MatchedUserRuleSpout extends BaseRichSpout implements IRichSpout {
     }
 
     public void nextTuple() {
-        String sql="select rule_id,user_id,user_id as checkupitempidrefix,"
+        String sql="select rule_id,user_id,user_id as checkupitempidrefix,rule_id as subgroupprefix,"
         		+ "guideline_id,originate,description,concernedFactors,"
         		+ "riskDefine,disease_name,riskType "
         		+ "from ta_userRule where sysflag='toGenerate' and status=?";
@@ -115,7 +115,7 @@ public class MatchedUserRuleSpout extends BaseRichSpout implements IRichSpout {
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("rule_id","user_id","checkupitempidrefix",
+        declarer.declare(new Fields("rule_id","user_id","checkupitempidrefix","subgroupprefix",
         		"guideline_id","originate",
         		"description","concernedFactors",
         		"riskDefine","disease_name","riskType"));
