@@ -108,8 +108,8 @@ public class PrepareTopology extends AbstractCheckupSolutionTopology {
         		new Column("originate", Types.VARCHAR),
         		new Column("description", Types.VARCHAR),
         		new Column("concernedfactors", Types.VARCHAR),
-        		new Column("highriskdefine", Types.VARCHAR),
-        		new Column("highriskexpression", Types.VARCHAR));//used for query values from tuple
+        		new Column("lowriskdefine", Types.VARCHAR),
+        		new Column("lowriskexpression", Types.VARCHAR));//used for query values from tuple
         JdbcMapper lowRiskUserRuleMapper = new SimpleJdbcMapper(lowRiskSchemaColumns);//define tuple columns
         JdbcInsertBolt jdbcInsertLowRiskUserRuleBolt = new JdbcInsertBolt(connectionProvider, lowRiskUserRuleMapper)
                 .withInsertQuery("insert into ta_userRule(rule_id,user_id,guideline_id,disease_name,originate,"
