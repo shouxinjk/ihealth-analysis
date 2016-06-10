@@ -17,6 +17,7 @@
  */
 package com.shouxinjk.ihealth.analyzer.topology;
 
+import org.apache.log4j.Logger;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
@@ -44,7 +45,8 @@ public abstract class AbstractCheckupSolutionTopology {
 
     protected ConnectionProvider connectionProvider;
     protected Properties prop=new Properties();
-
+    private static final Logger logger = Logger.getLogger(AbstractCheckupSolutionTopology.class);
+    		
     protected static final String JDBC_CONF = "jdbc.conf";
     
     public void execute(String[] args) throws Exception {
@@ -64,6 +66,18 @@ public abstract class AbstractCheckupSolutionTopology {
         jdbcConfigMap.put("dataSource.url", prop.getProperty("mysql.url"));//jdbc:mysql://localhost/test
         jdbcConfigMap.put("dataSource.user", prop.getProperty("mysql.user"));//root
         jdbcConfigMap.put("dataSource.password", prop.getProperty("mysql.password"));//password
+//        try{
+//	        jdbcConfigMap.put("minimumIdle", Integer.parseInt(prop.getProperty("mysql.minimumIdle")));//minIdle
+//        }catch(Exception ex){
+//        	jdbcConfigMap.put("minimumIdle", 2);
+//	        logger.error("Cannot read minimumIdle from properties.",ex);
+//        }
+        try{
+	        jdbcConfigMap.put("maximumPoolSize", Integer.parseInt(prop.getProperty("mysql.maximumPoolSize")));//maxPoolSize
+        }catch(Exception ex){
+        	jdbcConfigMap.put("maximumPoolSize", 5);
+        	logger.error("Cannot read maximumPoolSize from properties.",ex);
+        }
         config.put(JDBC_CONF, jdbcConfigMap);  
         this.connectionProvider = new HikariCPConnectionProvider(jdbcConfigMap);
         
