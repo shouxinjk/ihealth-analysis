@@ -24,6 +24,7 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
 import com.google.common.collect.Lists;
+import com.shouxinjk.ihealth.analyzer.bolt.GuideLineRuleMatchBolt;
 import com.shouxinjk.ihealth.analyzer.spout.UserRuleSpout;
 import com.shouxinjk.ihealth.analyzer.util.Util;
 
@@ -50,7 +51,7 @@ public class MatchTopology extends AbstractCheckupSolutionTopology {
     private static final String SQL_UPDATE_USER_RULE_BOLT = "SQL_UPDATE_USER_RULE_BOLT";
     private static final String SQL_UPDATE_LAST_MATCHED_TIME = "SQL_UPDATE_LAST_MATCHED_TIME";
     
-    private static final String SQL_MATCH_USER_RULE="select ? as user_id,? as rule_id,if(count(*)>0,'match','dismatch') as status from ta_user where user_id=? and ?";
+    private static final String SQL_MATCH_USER_RULE="select ? as user_id,? as rule_id,if(count(*)>0,'match','dismatch') as status from ta_user where user_id=?";
     public static void main(String[] args) throws Exception {
         new MatchTopology().execute(args);
     }
@@ -77,7 +78,7 @@ public class MatchTopology extends AbstractCheckupSolutionTopology {
         		new Column("user_id2", Types.VARCHAR),
         		new Column("ruleExpression", Types.VARCHAR));
         JdbcLookupMapper jdbcUserRuleMatchMapper = new SimpleJdbcLookupMapper(userRuleMatchResultFields, matchUserRuleParams);
-        JdbcLookupBolt jdbcMatchUserRuleBolt = new JdbcLookupBolt(connectionProvider, sqlMatchUserRule, jdbcUserRuleMatchMapper);
+        GuideLineRuleMatchBolt jdbcMatchUserRuleBolt = new GuideLineRuleMatchBolt(connectionProvider, sqlMatchUserRule, jdbcUserRuleMatchMapper);
         
         //SQL:update match results
         //update ta_userRule set status=“$status” where user_id=“$user_id” and rule_id=“$rule_id”
