@@ -98,7 +98,7 @@ public class MatchTopology extends AbstractCheckupSolutionTopology {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(USER_RULE_SPOUT, userRuleSpout, 1);//TODO here we should put candidate user in a queue like Kafka
 //        builder.setBolt(SQL_FIND_USER_RULE_BOLT, jdbcFindUserRuleBolt, 1).shuffleGrouping(USER_RULE_SPOUT);
-        builder.setBolt(SQL_MATCH_USER_RULE_BOLT, jdbcMatchUserRuleBolt, 1).shuffleGrouping(USER_RULE_SPOUT);
+        builder.setBolt(SQL_MATCH_USER_RULE_BOLT, jdbcMatchUserRuleBolt, 3).shuffleGrouping(USER_RULE_SPOUT);
         builder.setBolt(SQL_UPDATE_LAST_MATCHED_TIME, jdbcUpdateUserTimestampBolt, 1).shuffleGrouping(SQL_MATCH_USER_RULE_BOLT);
         builder.setBolt(SQL_UPDATE_USER_RULE_BOLT, jdbcUpdateMatchResultBolt, 1).shuffleGrouping(SQL_MATCH_USER_RULE_BOLT);
         return builder.createTopology();
