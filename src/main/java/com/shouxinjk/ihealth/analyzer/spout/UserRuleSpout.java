@@ -91,9 +91,10 @@ public class UserRuleSpout extends BaseRichSpout implements IRichSpout {
 //                logger.debug("Try to update user status.[SQL]"+updateTimestampSql);
 //                jdbcClient.executeSql(updateTimestampSql); 
                 //here we update sysflag(toMatch\toGenerate\toRelease)
-                String statisticSql = "update ta_userRule set sysflag='toGenerate' where user_id='"+userId+"' and rule_id='"+ruleId+"'";
-                logger.debug("Try to update userRule sysflag.[SQL]"+statisticSql);
-                jdbcClient.executeSql(statisticSql); 
+                //do not do this
+//                String statisticSql = "update ta_userRule set sysflag='toGenerate' where user_id='"+userId+"' and rule_id='"+ruleId+"'";
+//                logger.debug("Try to update userRule sysflag.[SQL]"+statisticSql);
+//                jdbcClient.executeSql(statisticSql); 
                 this.collector.emit(values);
             }
         }
