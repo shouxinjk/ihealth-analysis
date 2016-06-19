@@ -81,6 +81,7 @@ public class UserRuleSpout extends BaseRichSpout implements IRichSpout {
             for (List<Column> row : result) {
                 Values values = new Values();
                 String userId=row.get(0).getVal().toString();//get userId
+                String ruleId=row.get(1).getVal().toString();//get ruleId
                 for(Column column : row) {
                     values.add(column.getVal());
                 }
@@ -90,7 +91,7 @@ public class UserRuleSpout extends BaseRichSpout implements IRichSpout {
 //                logger.debug("Try to update user status.[SQL]"+updateTimestampSql);
 //                jdbcClient.executeSql(updateTimestampSql); 
                 //here we update sysflag(toMatch\toGenerate\toRelease)
-                String statisticSql = "update ta_userRule set sysflag='toGenerate' where user_id='"+userId+"'";
+                String statisticSql = "update ta_userRule set sysflag='toGenerate' where user_id='"+userId+"' and rule_id='"+ruleId+"'";
                 logger.debug("Try to update userRule sysflag.[SQL]"+statisticSql);
                 jdbcClient.executeSql(statisticSql); 
                 this.collector.emit(values);
